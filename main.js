@@ -2,25 +2,39 @@ const SHA256 = require('crypto-js/sha256')
 
 class Block{
 	
-	constructor(index,timestamp,data)
+	constructor(index,timestamp,data,previousHash='')
 	{
 		this.index=index;
 		this.timestamp=timestamp;
 		this.data=data;
+		this.previousHash=previousHash;
+		this.hash=this.calculateHash(); 
+		this.nonce=0;
 	}
 
 	calculateHash()
 	{
-		return SHA256(this.index+this.previousHash+this.timestamp+JSON.stringify(this.data)).toString();
+		return SHA256(this.index+this.previousHash+this.timestamp+this.nonce+JSON.stringify(this.data)).toString();
 	}
+
+	mineBlock(difficulty){
+		while(this.hash.substring(0,difficulty)!==Array(difficulty+1).join("0")){
+			this.nonce++;
+			this.hash=this.calculateHash();
+		}
+		console.log("Block mined "+this.hash);
+	}
+
 }
 
 class Blockchain{
 	
 	constructor(){
 		this.chain=[this.creategenesisblock()];
+		this.difficulty=5;
 	}
 
+	
 	creategenesisblock(){
 		return new Block(0,Date.now(),"Genesis Block","0");
 	}
@@ -30,8 +44,8 @@ class Blockchain{
 	}
 	
 	addBlock(newBlock){
-		newBlock.previousHash = this.getLatestBlock().hash;
-		newBlock.hash = newBlock.calculateHash();
+		newBlock.previousHash=this.getLatestBlock().hash;
+		newBlock.mineBlock(this.difficulty);
 		this.chain.push(newBlock);
 	}
 
@@ -61,11 +75,11 @@ Blazecoin.addBlock(new Block(2,'5-11-2018',{Sender:"Mahesh",Reciever:"Gokul",Amo
 Blazecoin.addBlock(new Block(3,'11-11-2018',{Sender:"Zakir",Reciever:"Boby",Amount:169}));
 Blazecoin.addBlock(new Block(4,'19-11-2018',{Sender:"Biju",Reciever:"Jahiz",Amount:698}));
 console.log(JSON.stringify(Blazecoin,null,4));
-Blazecoin.isChainValid();
+/*Blazecoin.isChainValid();
 Blazecoin.chain[1].data={Sender:"Gokul",Reciever:"Mahesh",Amount:600};
 Blazecoin.chain[1].hash=Blazecoin.chain[1].calculateHash();
 Blazecoin.chain[2].previousHash=Blazecoin.chain[1].hash;
 Blazecoin.chain[2].hash=Blazecoin.chain[2].calculateHash();
 console.log("Attacked");
 console.log(JSON.stringify(Blazecoin,null,4));
-Blazecoin.isChainValid();
+Blazecoin.isChainValid();*/
