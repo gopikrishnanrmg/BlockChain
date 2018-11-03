@@ -2,11 +2,9 @@ const SHA256 = require('crypto-js/sha256')
 
 class Block{
 	
-	constructor(index,timestamp,data,previousHash='')
+	constructor(timestamp,transaction,previousHash='')
 	{
-		this.index=index;
-		this.timestamp=timestamp;
-		this.data=data;
+		this.transaction=transaction;
 		this.previousHash=previousHash;
 		this.hash=this.calculateHash(); 
 		this.nonce=0;
@@ -27,29 +25,64 @@ class Block{
 
 }
 
+class Transaction{
+
+	constructor(fromAddress,toAddress,amount){
+		this.fromAddress=fromAddress;
+		this.toAddress=toAddress;
+		this.amount=amount;
+	}
+}
+
 class Blockchain{
 	
 	constructor(){
 		this.chain=[this.creategenesisblock()];
 		this.difficulty=5;
+		this.pendingTransactions=[];
+		this.miningreward=100;
 	}
 
 	
 	creategenesisblock(){
-		return new Block(0,Date.now(),"Genesis Block","0");
+		return new Block(Date.now(),"Genesis Block","0");
 	}
 
 	getLatestBlock(){
 		return this.chain[this.chain.length-1];
 	}
 	
-	addBlock(newBlock){
-		newBlock.previousHash=this.getLatestBlock().hash;
-		newBlock.mineBlock(this.difficulty);
-		this.chain.push(newBlock);
+
+	minependingTransactions(miningRewardAddress){
+		let block = new Block(Date.now(),this.pendingTransactions);
+		block.mineBlock(this.difficulty);
+		console.log("Block mined successfully");
+		block.previousHash=this.getLatestBlock().hash;
+		this.chain.push(block);
+		this.pendingTransactions=[];
+		this.createTransaction(new Transaction(null,miningRewardAddress,this.miningreward));
 	}
 
-	isChainValid(){
+	createTransaction(transaction){
+		this.pendingTransactions.push(transaction);
+	}
+
+	getBalanceOfAddress(address){
+		let balance = 0;
+		for(const block of this.chain){
+			for(const trans of block.transaction){
+				if(trans.fromAddress===address){
+					balance-=trans.amount;
+				}
+				if(trans.toAddress===address){
+					balance+=trans.amount;
+				}
+			}
+		}
+		return balance;
+	}
+
+	 isChainValid(){
 		for(let i = 1;i<this.chain.length;i++){
 			var currentBlock = this.chain[i];
 			var previousBlock = this.chain[i-1];
@@ -70,16 +103,11 @@ class Blockchain{
 // Calling APIs 
 
 let Blazecoin = new Blockchain();
-Blazecoin.addBlock(new Block(1,'2-11-2018',{Sender:"Rahul",Reciever:"Aney",Amount:400}));
-Blazecoin.addBlock(new Block(2,'5-11-2018',{Sender:"Mahesh",Reciever:"Gokul",Amount:60}));
-Blazecoin.addBlock(new Block(3,'11-11-2018',{Sender:"Zakir",Reciever:"Boby",Amount:169}));
-Blazecoin.addBlock(new Block(4,'19-11-2018',{Sender:"Biju",Reciever:"Jahiz",Amount:698}));
-console.log(JSON.stringify(Blazecoin,null,4));
-/*Blazecoin.isChainValid();
-Blazecoin.chain[1].data={Sender:"Gokul",Reciever:"Mahesh",Amount:600};
-Blazecoin.chain[1].hash=Blazecoin.chain[1].calculateHash();
-Blazecoin.chain[2].previousHash=Blazecoin.chain[1].hash;
-Blazecoin.chain[2].hash=Blazecoin.chain[2].calculateHash();
-console.log("Attacked");
-console.log(JSON.stringify(Blazecoin,null,4));
-Blazecoin.isChainValid();*/
+Blazecoin.createTransaction(new Transaction("address1","address2",100));
+Blazecoin.createTransaction(new Transaction("address2","address1",60));
+console.log("mining started");
+Blazecoin.minependingTransactions("address3");
+console.log("Balance is: "+Blazecoin.getBalanceOfAddress("address3"));
+Blazecoin.minependingTransactions("address3");
+console.log("Balance is: "+Blazecoin.getBalanceOfAddress("address3"));
+
